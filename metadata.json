@@ -1,0 +1,6 @@
+{
+  "name": "Éclat Botanicals",
+  "description": "An elegant e-commerce boutique for high-performance organic skincare, artisanal cosmetics, and botanical beauty products with dynamic hero showcase, category filtering, product customization, and an admin management portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
