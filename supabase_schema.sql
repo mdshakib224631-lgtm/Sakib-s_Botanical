@@ -513,187 +513,255 @@ SET website_name = EXCLUDED.website_name,
     website_logo_text = EXCLUDED.website_logo_text,
     website_logo_subtext = EXCLUDED.website_logo_subtext;
 
--- Seed Categories
+-- Seed Categories (10 Store Categories)
 INSERT INTO public.categories (id, name, slug, icon_name, description)
 VALUES
-  ('cat_all', 'All Products', 'all', 'Sparkles', 'Complete collection of artisanal botanical formulations.'),
-  ('cat_skincare', 'Skincare', 'skincare', 'Sparkles', 'Clean, bio-active organic skincare for healthy, radiant skin.'),
-  ('cat_serums', 'Serums & Elixirs', 'serums', 'FlaskConical', 'Concentrated botanical serums and precious restorative facial elixirs.'),
-  ('cat_moisturizers', 'Moisturizers', 'moisturizers', 'Droplets', 'Nutrient-rich barrier creams, hydrators, and cold-pressed balms.'),
-  ('cat_cleansers', 'Cleansers & Toners', 'cleansers', 'Wind', 'Gentle plant-based purifying cleansers and pure floral hydrosols.'),
-  ('cat_masks', 'Masks & Treatments', 'masks', 'Moon', 'Intensive weekly botanical restorative and clarifying face treatments.'),
-  ('cat_haircare', 'Hair & Body', 'haircare', 'Sun', 'Nourishing herbal scalp serums, hair oils, and botanical body balms.')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, slug = EXCLUDED.slug;
+  ('cat_all', 'All Products', 'all', 'Sparkles', 'Browse our complete artisanal collection'),
+  ('cat_skincare', 'Skincare', 'skincare', 'Sparkles', 'Nourishing botanical creams, moisturizers & cleansers'),
+  ('cat_serums', 'Serums & Oils', 'serums', 'FlaskConical', 'Targeted botanical treatments & glowing face oils'),
+  ('cat_moisturizers', 'Moisturizers', 'moisturizers', 'Droplets', 'Deep barrier moisture creams & lotions'),
+  ('cat_cleansers', 'Cleansers', 'cleansers', 'Wind', 'Gentle micellar waters, balms & herbal cleansers'),
+  ('cat-makeup', 'Makeup & Glow', 'makeup', 'Sun', 'Clean mineral makeup & liquid glow'),
+  ('cat-lipcare', 'Lip Care', 'lipcare', 'Sparkles', 'Tinted balms, velvet tints & rich lip oils'),
+  ('cat_masks', 'Masks & Treatments', 'masks', 'Moon', 'Rejuvenating sea berry masks & peels'),
+  ('cat_haircare', 'Hair & Body', 'haircare', 'Sun', 'Nourishing herbal scalp oils & body elixirs'),
+  ('cat-fragrance', 'Fragrance', 'fragrance', 'FlaskConical', 'Handcrafted botanical perfumes & solid oils')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, slug = EXCLUDED.slug, description = EXCLUDED.description;
 
--- Seed Hero Slides
+-- Seed Hero Slides (4 Botanical Hero Banners)
 INSERT INTO public.hero_slides (id, title, subtitle, tag, image_url, button_text, target_category, accent_color)
 VALUES
-  ('slide_1', 'Petal Infused Radiance', 'Awaken dull skin with wild-harvested French Damask Rose hydrosol and triple-molecular hyaluronic acid.', 'Spring Botanical Harvest', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1600&q=85', 'Explore The Ritual', 'serums', '#c97a7e'),
-  ('slide_2', 'Artisanal Herbal Elixir', 'Bio-active botanical oils cold-pressed with certified organic sea buckthorn and evening primrose.', 'Pure Cold-Pressed Formula', 'https://images.unsplash.com/photo-1608248597262-18151f18be25?auto=format&fit=crop&w=1600&q=85', 'Shop Elixirs', 'serums', '#9e6266'),
-  ('slide_3', 'Deep Velvet Moisture', 'Centella Asiatica and ceramides blended into whipped soufflé cream for lasting 72-hour barrier repair.', 'Dermatologist Approved', 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=1600&q=85', 'Discover Creams', 'moisturizers', '#8a4e52'),
-  ('slide_4', 'Pure Plant-Based Alchemy', 'Handcrafted in micro-batches with sustainably sourced botanicals and certified organic active ingredients.', 'Micro-Batch Craftsmanship', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1600&q=85', 'View Collection', 'all', '#5c393c')
-ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, subtitle = EXCLUDED.subtitle;
+  ('hero-1', 'Luminous Rose Water Infusion', 'Pure damask rose essence enriched with hyaluronic acid for 72-hour deep botanical hydration.', 'NEW ARRIVAL', 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1600&q=80', 'Discover Elixir', 'Serums & Oils', '#e8beac'),
+  ('hero-2', 'Velvet Satin Lip Elixirs', 'Nourishing organic jojoba and berry wax formula offering rich, weightless pigmentation.', 'BEST SELLER', 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=1600&q=80', 'Shop Shades', 'Lip Care', '#c97a7e'),
+  ('hero-3', 'Botanical Renewal Night Cream', 'Potent bakuchiol and cold-pressed plum oil to visibly firm and rejuvenate while you rest.', 'ECO-CERTIFIED', 'https://images.unsplash.com/photo-1608248597263-000799965d8f?auto=format&fit=crop&w=1600&q=80', 'Explore Skincare', 'Skincare', '#8a9a86'),
+  ('hero-4', 'Artisanal Glow Bronzing Serum', 'Sun-kissed luminescence infused with niacinamide and golden sea kelp extract.', 'SUMMER SPECIAL', 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?auto=format&fit=crop&w=1600&q=80', 'Shop Radiance', 'Makeup', '#d4a373')
+ON CONFLICT (id) DO UPDATE 
+SET title = EXCLUDED.title, 
+    subtitle = EXCLUDED.subtitle, 
+    image_url = EXCLUDED.image_url, 
+    button_text = EXCLUDED.button_text;
 
--- Seed Promo Code
+-- Seed Promo Codes
 INSERT INTO public.promo_codes (id, code, discount_percentage, min_order_amount, is_active)
 VALUES
   ('promo_sakib10', 'SAKIB10', 10, 500, true),
-  ('promo_eclat15', 'ECLAT15', 15, 1000, true)
+  ('promo_eclat15', 'ECLAT15', 15, 1000, true),
+  ('promo_botanical20', 'BOTANICAL20', 20, 1500, true)
 ON CONFLICT (id) DO UPDATE SET discount_percentage = EXCLUDED.discount_percentage, is_active = true;
 
--- Seed Products
+-- Seed Products (Complete 12 Artisanal Products with Variants, Ingredients & Specs)
 INSERT INTO public.products (
   id, name, tagline, category, price, original_price, rating, review_count,
-  description, ingredients, how_to_use, benefits, images, in_stock, stock_count,
-  is_new, is_bestseller, is_organic, featured
+  description, ingredients, how_to_use, benefits, images, variants, skin_types,
+  in_stock, stock_count, is_new, is_bestseller, is_organic, featured
 ) VALUES
 (
-  'prod_1',
-  'Rose Luminescence Restorative Serum',
-  'Triple-Molecular Hyaluronic & Damask Rose Elixir',
-  'serums',
-  1450,
-  1750,
-  4.9,
-  142,
-  'A silky bio-active nectar concentrated with organic Damask Rose hydrosol, snow mushroom polysaccharide, and pure plant squalane. Plumps fine lines and restores radiant luminosity.',
-  '["Organic Damask Rose Hydrosol", "Triple Molecular Hyaluronic Acid", "Tremella Snow Mushroom", "Plant Squalane", "Niacinamide (Vitamin B3)"]'::jsonb,
-  'Smooth 3-4 drops morning and evening over cleansed face and neck before moisturizer.',
-  '["Instant deep dermal hydration", "Soothes redness and irritation", "Revives dull, tired skin", "Strengthens moisture barrier"]'::jsonb,
-  '["https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1608248597262-18151f18be25?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 45, true, true, true, true
+  'prod-1',
+  'Aura Radiance Vitamin C Serum',
+  'Brightening botanical complex with wild rosehip',
+  'Serums & Oils',
+  1450, 1750, 4.9, 128,
+  'A silky concentrated serum enriched with 15% stabilized Vitamin C, organic Rosehip oil, and Ferulic acid. Restores natural radiance, fades dark spots, and shields skin against daily environmental stressors.',
+  '["15% L-Ascorbic Acid", "Organic Rosehip Seed Oil", "Botanical Ferulic Acid", "Hyaluronic Acid", "Kakadu Plum Extract"]'::jsonb,
+  'Apply 3-4 drops to cleansed face and neck every morning. Press gently into skin until absorbed, followed by sunscreen.',
+  '["Illuminates dull complexion", "Visibly firms fine lines", "Deep cellular antioxidants", "Non-comedogenic formula"]'::jsonb,
+  '["https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1608248597263-000799965d8f?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["All Skin Types", "Sensitive", "Dull"]'::jsonb,
+  true, 42, false, true, true, true
 ),
 (
-  'prod_2',
-  'Botanical Dew Hydrating Essence',
-  'Fermented Rice Water & Green Tea Toner',
-  'cleansers',
-  980,
-  1200,
-  4.8,
-  89,
-  'A lightweight, micro-nourishing treatment essence that softens the skin texture while preparing epidermal layers to receive moisture and serums.',
-  '["Organic Green Tea Hydrosol", "Fermented Camellia Japonica", "Centella Asiatica", "Glycerin", "Allantoin"]'::jsonb,
-  'Pat gently onto cleansed face using palms until fully absorbed.',
-  '["Pore refinement and balance", "Balances optimal skin pH 5.5", "Enhances serum absorption", "Antioxidant protection"]'::jsonb,
-  '["https://images.unsplash.com/photo-1570554886111-e80fcca6a029?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 30, false, true, true, true
+  'prod-2',
+  'Velvet Satin Lipstick',
+  'Weightless pigment infused with shea butter',
+  'Lip Care',
+  850, 1050, 4.8, 94,
+  'An ultra-creamy, feather-light velvet lipstick that cushions lips in moisture while delivering rich, high-impact pigment with a soft matte finish.',
+  '["Organic Shea Butter", "Jojoba Seed Wax", "Wild Berry Extract", "Vitamin E", "Natural Mineral Pigments"]'::jsonb,
+  'Glide directly onto lips starting from the center outward. Layer for buildable intensity.',
+  '["8-hour hydrating wear", "Comfortable matte feel", "100% natural wax base", "Feather-resistant formula"]'::jsonb,
+  '["https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1625093742435-6fa192b6fb10?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[{"id": "v-rose", "name": "Dusty Rose", "hexColor": "#c97a7e", "inStock": true}, {"id": "v-berry", "name": "Plum Nectar", "hexColor": "#8a3b53", "inStock": true}, {"id": "v-nude", "name": "Warm Terracotta", "hexColor": "#bd6a53", "inStock": true}, {"id": "v-coral", "name": "Petal Coral", "hexColor": "#e07a5f", "inStock": true}]'::jsonb,
+  '["All Skin Types"]'::jsonb,
+  true, 85, true, false, true, true
 ),
 (
-  'prod_3',
-  'Velvet Petal Barrier Moisture Cream',
-  'Whipped Ceramides, Shea Butter & Calendula',
-  'moisturizers',
-  1650,
-  1950,
-  5.0,
-  210,
-  'A rich velvety moisture soufflé that locks in all-day comfort without heaviness. Crafted with oat beta-glucan and organic calendula flower infusion.',
-  '["Shea Nilotica Butter", "Ceramide NP & AP", "Colloidal Oat Beta-Glucan", "Organic Calendula Extract", "Evening Primrose Oil"]'::jsonb,
-  'Massage a pea-sized amount onto face and neck following your serum ritual.',
-  '["72-hour barrier repair", "Calms sensitized and dry skin", "Velvety non-greasy cushion finish", "Protects against pollution"]'::jsonb,
-  '["https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  'prod-3',
+  'Hydra-Dew Botanical Moisture Cream',
+  'Deep moisture barrier repair cream',
+  'Moisturizers',
+  1650, 1950, 4.7, 76,
+  'A cloud-like whipped moisturizing cream with plant ceramides, white tea leaf extract, and squalane to lock in hydration and plump skin elasticity.',
+  '["Plant Ceramides", "Olive Squalane", "Organic White Tea Extract", "Gotu Kola (Centella Asiatica)", "Sweet Almond Oil"]'::jsonb,
+  'Smooth a nickel-sized amount over clean face and neck, morning and night. Warm between fingertips before applying.',
+  '["Plumps dehydrated skin", "Soothes redness & inflammation", "Non-greasy velvety finish"]'::jsonb,
+  '["https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["Dry", "Normal", "Sensitive"]'::jsonb,
   true, 28, false, true, true, true
 ),
 (
-  'prod_4',
-  'Midnight Recovery Botanical Facial Oil',
-  'Cold-Pressed Blue Tansy & Rosehip Seed',
-  'serums',
-  1890,
-  2250,
-  4.9,
-  98,
-  'A luxurious sapphire-hued dry face oil loaded with natural Azulene, Bakuchiol, and omega fatty acids that works in synergy with the nightly circadian cycle.',
-  '["Moroccan Blue Tansy Essential Oil", "Virgin Cold-Pressed Rosehip Oil", "Bakuchiol (Natural Retinol)", "Jojoba Esters", "Vitamin E"]'::jsonb,
-  'Warm 2-3 drops between fingertips and gently press into damp skin as the final night step.',
-  '["Recharges cellular vitality", "Smooths rough skin texture", "Non-comedogenic luminous dry finish", "Targeted anti-inflammatory action"]'::jsonb,
-  '["https://images.unsplash.com/photo-1608248597262-18151f18be25?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 18, true, false, true, true
+  'prod-4',
+  'Celestial Dew Liquid Glow Highlighter',
+  'Sheer golden radiance for cheeks & brow bones',
+  'Makeup',
+  1150, 1350, 4.9, 81,
+  'A hybrid liquid serum highlighter infused with ultra-fine pearl micro-pigments and chamomile oil. Gives a glass-skin, lit-from-within sheen without glitter.',
+  '["Camellia Flower Oil", "Ethical Mica Pearls", "Chamomile Hydrosol", "Squalane"]'::jsonb,
+  'Dab 1-2 dots onto cheekbones, bridge of nose, and cupids bow using fingertips or a damp beauty sponge.',
+  '["Glass skin finish", "Blends seamlessly over makeup or bare skin", "Lightweight non-sticky oil base"]'::jsonb,
+  '["https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[{"id": "v-champagne", "name": "Champagne Pearl", "hexColor": "#f3e8d2", "inStock": true}, {"id": "v-rose-gold", "name": "Blush Gold", "hexColor": "#e8c5b5", "inStock": true}, {"id": "v-bronze", "name": "Sunlit Bronze", "hexColor": "#cfa683", "inStock": true}]'::jsonb,
+  '["All Skin Types"]'::jsonb,
+  true, 15, true, false, false, true
 ),
 (
-  'prod_5',
-  'Purifying Chamomile Silk Gel Cleanser',
-  'Sulfate-Free Foam with Willow Bark & Honey',
-  'cleansers',
-  850,
-  1050,
-  4.7,
-  74,
-  'An ultra-gentle foaming gel that dissolves impurities and daily sunscreen without disrupting the delicate moisture barrier.',
-  '["Organic Roman Chamomile Water", "White Willow Bark Extract", "Raw Wildflower Honey", "Coconut Glucoside", "Pro-Vitamin B5"]'::jsonb,
-  'Lather one pump with water, massage over damp face for 60 seconds, and rinse with lukewarm water.',
-  '["Cleanses without tightness", "Unclogs congested pores", "Maintains healthy microbiome", "Gentle for daily twice-a-day use"]'::jsonb,
-  '["https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  'prod-5',
+  'Pure Chamomile Micellar Balm Cleanser',
+  'Melts water-proof makeup and impurities gently',
+  'Cleansers',
+  950, 1150, 4.8, 64,
+  'A transformative balm-to-milk cleanser crafted with blue chamomile, calendula, and seabuckthorn oil. Effortlessly dissolves cosmetics while leaving skin soft.',
+  '["Blue Chamomile Oil", "Calendula Extract", "Seabuckthorn Berry Oil", "Sunflower Seed Oil"]'::jsonb,
+  'Massage onto dry skin to dissolve makeup. Add warm water to emulsify into a soothing milk, then rinse thoroughly.',
+  '["Zero tight feeling post-cleansing", "Removes waterproof mascara", "Includes organic muslin cloth"]'::jsonb,
+  '["https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1608248597263-000799965d8f?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["Sensitive", "Dry", "Combination"]'::jsonb,
+  true, 30, false, false, true, false
+),
+(
+  'prod-6',
+  'Jardin Nuit Botanical Eau de Parfum',
+  'Hand-blended jasmine, sandalwood & bergamot',
+  'Fragrance',
+  2450, 2800, 4.9, 42,
+  'An ethereal scent evoking a moonlit Mediterranean garden. Opens with crisp bergamot and neroli, heart notes of night-blooming jasmine, anchored by warm sandalwood.',
+  '["Organic Grape Alcohol", "Night Jasmine Absolute", "Calabrian Bergamot Oil", "Sandalwood Resin"]'::jsonb,
+  'Spritz onto pulse points behind ears, wrists, and collarbone. Do not rub wrists together to preserve top notes.',
+  '["Clean alcohol base", "Long-lasting 12-hour scent profile", "Artisanal glass flask"]'::jsonb,
+  '["https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["All Skin Types"]'::jsonb,
+  true, 19, true, false, false, false
+),
+(
+  'prod-7',
+  'Illuminating Golden Sea Berry Face Mask',
+  'Vitamin-rich radiance boosting herbal clay mask',
+  'Masks & Treatments',
+  1250, 1450, 4.8, 53,
+  'Infused with golden sea buckthorn and French yellow clay to brighten and detoxify skin without stripping natural moisture.',
+  '["French Yellow Clay", "Sea Buckthorn Berry", "Turmeric Root Extract", "Rose Floral Water"]'::jsonb,
+  'Apply an even layer for 10-15 minutes, then rinse with warm water.',
+  '["Instant radiance", "Clarifies pores without drying"]'::jsonb,
+  '["https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["All Skin Types", "Dull", "Oily"]'::jsonb,
+  true, 25, false, false, true, false
+),
+(
+  'prod-8',
+  'Nectar Glow Tinted Lip Oil',
+  'High-shine botanical lip treatment',
+  'Lip Care',
+  650, 780, 4.8, 89,
+  'A cushiony non-sticky lip oil infused with honey blossom nectar and raspberry seed oil for intense shine and sheer tint.',
+  '["Cold-pressed Raspberry Seed Oil", "Honey Blossom Nectar", "Vitamin E", "Organic Coconut Oil"]'::jsonb,
+  'Apply generous coat with plush applicator whenever lips need moisture and luscious shine.',
+  '["Non-tacky glaze finish", "Drenches lips in hydration", "Natural subtle tint"]'::jsonb,
+  '["https://images.unsplash.com/photo-1625093742435-6fa192b6fb10?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[{"id": "v-honey", "name": "Clear Honey", "hexColor": "#f7d070", "inStock": true}, {"id": "v-cherry", "name": "Cherry Blossom", "hexColor": "#d64550", "inStock": true}, {"id": "v-berry-oil", "name": "Wild Fig", "hexColor": "#782d3e", "inStock": true}]'::jsonb,
+  '["All Skin Types"]'::jsonb,
   true, 50, false, false, true, false
 ),
 (
-  'prod_6',
-  'Illuminating Golden Sea Berry Face Mask',
-  'AHA Enzymatic Glow & Turmeric Butter',
-  'masks',
-  1250,
-  1500,
-  4.8,
-  63,
-  'A weekly transformative enzyme mask infused with organic sea buckthorn, papaya enzymes, and soothing golden turmeric. Unveils fresh, glowing skin in 10 minutes.',
-  '["Sea Buckthorn Fruit Oil", "Papaya Enzyme (Papain)", "Organic Turmeric Root Extract", "Kaolin Clay", "Sweet Almond Oil"]'::jsonb,
-  'Apply an even layer to clean skin. Leave on for 10-15 minutes, then rinse with warm water.',
-  '["Instantly polishes dead surface cells", "Brightens post-blemish marks", "Smoother makeup application", "Energizing botanical aroma"]'::jsonb,
-  '["https://images.unsplash.com/photo-1567928815117-640a1b021382?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 22, true, false, true, false
+  'prod-9',
+  'Rosemary & Mint Scalp Stimulating Elixir',
+  'Deep root nourishing botanical hair and scalp serum',
+  'Hair & Body',
+  1100, 1350, 4.9, 67,
+  'A nutrient-dense scalp treatment infused with pure rosemary oil, peppermint leaf extract, biotin, and cold-pressed castor seed oil to invigorate hair follicles and encourage lustrous hair growth.',
+  '["Organic Rosemary Essential Oil", "Peppermint Leaf Oil", "Pure Castor Oil", "Golden Jojoba", "Biotin & Vitamin E"]'::jsonb,
+  'Part hair into sections and apply 4-6 drops directly onto the scalp. Massage thoroughly with fingertips for 3-5 minutes before washing or leave overnight.',
+  '["Stimulates healthy hair roots", "Relieves dry and flaky scalp", "Strengthens hair strands without greasiness"]'::jsonb,
+  '["https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1608248597263-000799965d8f?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["All Hair Types", "Dry Scalp", "Fine Hair"]'::jsonb,
+  true, 38, false, true, true, true
 ),
 (
-  'prod_7',
-  'Herbal Scalp & Crown Restorative Oil',
-  'Bhringraj, Rosemary & Black Seed Elixir',
-  'haircare',
-  1150,
-  1400,
-  4.9,
-  116,
-  'A nutrient-dense scalp treatment infused with certified organic rosemary, cold-pressed kalonji (black seed), and Ayurvedic herbs to foster strong, lustrous hair growth.',
-  '["Organic Rosemary Leaf Extract", "Cold-Pressed Black Cumin Seed Oil", "Bhringraj Extract", "Castor Seed Oil", "Cedarwood Oil"]'::jsonb,
-  'Part hair and apply a few drops directly to the scalp. Massage for 5 minutes. Leave on for 1 hour or overnight before washing.',
-  '["Stimulates healthy hair follicles", "Alleviates dry, flaky scalp", "Tames flyaways and seals split ends", "Naturally scented with rosemary and herbs"]'::jsonb,
-  '["https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 35, false, true, true, false
+  'prod-10',
+  'Golden Amber Botanical Body Polish & Soufflé',
+  'Whipped shea and warm vanilla amber body butter',
+  'Hair & Body',
+  1350, 1600, 4.8, 45,
+  'A decadent, whipped body butter that melts seamlessly into the skin. Infused with unrefined shea butter, sweet almond oil, and a warm botanical resin of amber and sandalwood.',
+  '["Raw Ghanaian Shea Butter", "Virgin Coconut Oil", "Cold-Pressed Sweet Almond Oil", "Amber Botanical Resin"]'::jsonb,
+  'Massage liberally into damp skin after showering to lock in 24-hour hydration.',
+  '["Deep velvet barrier moisture", "Non-sticky whipped texture", "Warm lingering natural fragrance"]'::jsonb,
+  '["https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["Dry", "Very Dry", "Normal"]'::jsonb,
+  true, 22, false, false, true, false
 ),
 (
-  'prod_8',
-  'Botanical Ritual Discovery Gift Set',
-  '4-Piece Artisanal Skincare Essentials Box',
-  'all',
-  2450,
-  2900,
-  5.0,
-  88,
-  'The ultimate artisanal curation featuring travel-friendly luxury sizes of our Cleanser, Rose Serum, Velvet Cream, and Midnight Oil in a keepsake presentation box.',
-  '["Chamomile Cleanser (30ml)", "Rose Luminescence Serum (15ml)", "Velvet Barrier Cream (25ml)", "Midnight Recovery Oil (10ml)"]'::jsonb,
-  'Follow the complete 4-step botanical routine morning and evening.',
-  '["Complete 4-step holistic ritual", "Perfect luxury gift packaging", "Flight-friendly travel sizes", "Full 30-day ritual experience"]'::jsonb,
-  '["https://images.unsplash.com/photo-1512290900672-1f55a746a583?auto=format&fit=crop&w=800&q=80"]'::jsonb,
-  true, 15, true, true, true, true
+  'prod-11',
+  'Damask Rose & Peony Hydrating Facial Mist',
+  'Refreshing botanical hydrosol spray with hyaluronic acid',
+  'Skincare',
+  850, 990, 4.8, 92,
+  'An invigorating fine mist crafted with steam-distilled organic damask rose hydrosol, French peony flower extract, and aloe vera leaf juice to soothe and hydrate throughout the day.',
+  '["Steam-distilled Damask Rose Hydrosol", "White Peony Flower Extract", "Aloe Barbadensis Leaf Juice", "Hyaluronic Acid"]'::jsonb,
+  'Mist generously over face and neck after cleansing or anytime skin feels dehydrated or tight.',
+  '["Instantly calms irritation", "Sets makeup beautifully", "100% alcohol-free"]'::jsonb,
+  '["https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["All Skin Types", "Sensitive", "Dehydrated"]'::jsonb,
+  true, 60, true, false, true, true
+),
+(
+  'prod-12',
+  'Gentle Matcha Green Tea Enzyme Cleanser',
+  'Purifying gentle foam with organic Japanese ceremonial matcha',
+  'Cleansers',
+  920, 1100, 4.7, 38,
+  'A gentle, pH-balanced gel cleanser formulated with antioxidant-packed Uji matcha green tea, papaya enzymes, and soothing cucumber hydrosol to purify without disrupting the skin barrier.',
+  '["Ceremonial Matcha Green Tea", "Papaya Fruit Enzyme", "Cucumber Hydrosol", "Plant Saponins"]'::jsonb,
+  'Pump 1-2 times onto wet palms. Lather into a soft foam and massage gently over damp skin, then rinse with lukewarm water.',
+  '["Unclogs pores gently", "Calms acne-prone irritation", "Maintains skin pH 5.5"]'::jsonb,
+  '["https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+  '[]'::jsonb,
+  '["Oily", "Combination", "Acne-Prone", "Sensitive"]'::jsonb,
+  true, 35, false, false, true, false
 )
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
+    tagline = EXCLUDED.tagline,
+    category = EXCLUDED.category,
     price = EXCLUDED.price,
-    description = EXCLUDED.description;
+    original_price = EXCLUDED.original_price,
+    description = EXCLUDED.description,
+    images = EXCLUDED.images,
+    variants = EXCLUDED.variants,
+    stock_count = EXCLUDED.stock_count,
+    in_stock = EXCLUDED.in_stock;
 
--- Seed Default Customer Profile
+-- Seed Default Customer Profiles
 INSERT INTO public.customers (id, name, email, phone, address, total_orders, total_spent, registered_date, status)
-VALUES (
-  'cust_sakib_01',
-  'Sakib Ahmed',
-  'mdshakib224631@gmail.com',
-  '+8801700000000',
-  'Banani Road 11, Block D, Dhaka 1213, Bangladesh',
-  2,
-  3100,
-  TO_CHAR(NOW(), 'YYYY-MM-DD'),
-  'Active'
-)
+VALUES 
+  ('usr-101', 'Sophia Laurent', 'sophia.laurent@example.com', '+880 1711-234567', 'House 12, Road 4, Dhanmondi, Dhaka 1205', 3, 3420, '2026-01-15', 'VIP'),
+  ('usr-102', 'Elena Rostova', 'elena.rostova@example.com', '+880 1812-345678', 'Road 11, Block D, Banani, Dhaka 1213', 1, 960, '2026-02-02', 'Active'),
+  ('usr-103', 'Amara Vance', 'amara.vance@example.com', '+880 1913-456789', 'GEC Circle, Nasirabad, Chattogram', 2, 1840, '2026-02-05', 'New'),
+  ('cust_sakib_01', 'Sakib Ahmed', 'mdshakib224631@gmail.com', '+8801700000000', 'Banani Road 11, Block D, Dhaka 1213, Bangladesh', 5, 7500, TO_CHAR(NOW(), 'YYYY-MM-DD'), 'VIP')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, phone = EXCLUDED.phone;
+
+-- Seed Demo Orders
+INSERT INTO public.orders (id, customer_id, customer_name, customer_phone, email, items, total_amount, delivery_area, delivery_charge, payment_method, status, date, shipping_address, customer_notes)
+VALUES
+  ('ORD-8921', 'usr-101', 'Sophia Laurent', '+880 1711-234567', 'sophia.laurent@example.com', '[{"productName": "Aura Radiance Vitamin C Serum", "quantity": 1, "price": 1450}, {"productName": "Velvet Satin Lipstick", "variantName": "Dusty Rose", "quantity": 1, "price": 850}]'::jsonb, 2360, 'inside_dhaka', 60, 'Cash on Delivery (COD)', 'Processing', '2026-02-18', 'House 12, Road 4, Dhanmondi, Dhaka 1205', 'Please call before delivery'),
+  ('ORD-8922', 'usr-102', 'Elena Rostova', '+880 1812-345678', 'elena.rostova@example.com', '[{"productName": "Hydra-Dew Botanical Moisture Cream", "quantity": 1, "price": 1650}, {"productName": "Damask Rose & Peony Hydrating Facial Mist", "quantity": 1, "price": 850}]'::jsonb, 2560, 'inside_dhaka', 60, 'Cash on Delivery (COD)', 'Shipped', '2026-02-19', 'Road 11, Block D, Banani, Dhaka 1213', 'Urgent delivery requested')
+ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, total_amount = EXCLUDED.total_amount;
 
 -- Success confirmation notice
 SELECT 'Sakib''s Botanical Supabase database setup completed successfully! All tables, storage buckets, RLS policies, and initial botanical data are ready.' AS setup_result;
