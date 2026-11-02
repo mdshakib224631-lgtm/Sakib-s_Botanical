@@ -218,11 +218,95 @@ export default function App() {
   // UI Drawer & Modal State
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
-  const [activePage, setActivePage] = useState<'store' | 'admin'>('store');
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [showWishlistOnly, setShowWishlistOnly] = useState(false);
+
+  // Client-Side URL Routing State (/admin and /)
+  const [currentRoute, setCurrentRoute] = useState<'store' | 'admin'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      const h = window.location.hash.toLowerCase();
+      if (p.startsWith('/admin') || h === '#admin' || h.startsWith('#/admin')) {
+        return 'admin';
+      }
+    }
+    return 'store';
+  });
+
+  // Listen to browser navigation (back/forward and hash changes)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const p = window.location.pathname.toLowerCase();
+      const h = window.location.hash.toLowerCase();
+      if (p.startsWith('/admin') || h === '#admin' || h.startsWith('#/admin')) {
+        setCurrentRoute('admin');
+      } else {
+        setCurrentRoute('store');
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  // Programmatic navigation helper
+  const navigateTo = (route: 'store' | 'admin') => {
+    if (route === 'admin') {
+      if (window.location.pathname !== '/admin') {
+        window.history.pushState({}, '', '/admin');
+      }
+      setCurrentRoute('admin');
+    } else {
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/');
+      }
+      setCurrentRoute('store');
+    }
+  };
+
+  // Check active Supabase Auth session on mount and listen to auth changes
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkSupabaseSession() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session && !error) {
+          if (isMounted) {
+            setIsAdminAuthenticated(true);
+            localStorage.setItem('eclat_admin_authed', 'true');
+          }
+        } else {
+          // If no active Supabase session, check fallback local authenticated session
+          const localAuthed = localStorage.getItem('eclat_admin_authed') === 'true';
+          if (!localAuthed && isMounted) {
+            setIsAdminAuthenticated(false);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase auth session check notice:', err);
+      }
+    }
+
+    checkSupabaseSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && isMounted) {
+        setIsAdminAuthenticated(true);
+        localStorage.setItem('eclat_admin_authed', 'true');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   // App Top Success Toast State
   const [topToast, setTopToast] = useState<{ show: boolean; title: string; message: string } | null>(null);
@@ -740,19 +824,30 @@ export default function App() {
   };
 
   const handleOpenAdmin = () => {
-    if (isAdminAuthenticated) {
-      setActivePage('admin');
-    } else {
-      setIsLoginModalOpen(true);
-    }
+    navigateTo('admin');
   };
 
-  // Admin Authentication & Settings Handlers
-  const handleAdminLogin = (email: string, pass: string): boolean => {
+  // Admin Authentication & Settings Handlers (Supabase Auth + Verified Credentials)
+  const handleAdminLogin = async (email: string, pass: string): Promise<boolean> => {
     const inputEmail = email.toLowerCase().trim();
     const configEmail = siteSettings.adminEmail?.toLowerCase().trim() || 'mdshakib224631@gmail.com';
     const configPass = siteSettings.adminPassword || 'EclatAdmin2026!';
 
+    // 1. Try Supabase Auth signInWithPassword
+    let supabaseAuthSuccess = false;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password: pass,
+      });
+      if (!error && data?.session) {
+        supabaseAuthSuccess = true;
+      }
+    } catch (authErr) {
+      console.warn('Supabase auth signin attempt notice:', authErr);
+    }
+
+    // 2. Validate fallback configured admin credentials
     const isEmailValid =
       inputEmail === configEmail ||
       inputEmail === 'mdshakib224631@gmail.com' ||
@@ -763,7 +858,7 @@ export default function App() {
       pass === 'EclatAdmin2026!' ||
       pass === 'admin123';
 
-    if (isEmailValid && isPassValid) {
+    if (supabaseAuthSuccess || (isEmailValid && isPassValid)) {
       setIsAdminAuthenticated(true);
       try {
         localStorage.setItem('eclat_admin_authed', 'true');
@@ -775,10 +870,16 @@ export default function App() {
     return false;
   };
 
-  const handleAdminLogout = () => {
+  const handleAdminLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Supabase signOut notice:', e);
+    }
     setIsAdminAuthenticated(false);
     try {
       localStorage.setItem('eclat_admin_authed', 'false');
+      localStorage.removeItem('eclat_admin_authed');
     } catch (e) {
       console.error(e);
     }
@@ -863,35 +964,56 @@ export default function App() {
 
   const totalCartCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
 
-  // If active page is admin, render AdminPortal full page
-  if (activePage === 'admin') {
+  // Dedicated /admin Client-Side Route with Supabase Authentication Security Guard
+  if (currentRoute === 'admin') {
+    if (isAdminAuthenticated) {
+      return (
+        <AdminPortal
+          isOpen={true}
+          onClose={() => navigateTo('store')}
+          products={products}
+          onAddProduct={handleAddProduct}
+          onUpdateProduct={handleUpdateProduct}
+          onDeleteProduct={handleDeleteProduct}
+          heroSlides={heroSlides}
+          onAddHeroSlide={handleAddHeroSlide}
+          onDeleteHeroSlide={handleDeleteHeroSlide}
+          categories={categories}
+          onAddCategory={handleAddCategory}
+          onDeleteCategory={handleDeleteCategory}
+          orders={orders}
+          onUpdateOrderStatus={handleUpdateOrderStatus}
+          onDeleteOrder={handleDeleteOrder}
+          customers={customers}
+          onAddCustomer={handleAddCustomer}
+          onDeleteCustomer={handleDeleteCustomer}
+          siteSettings={siteSettings}
+          onUpdateSiteSettings={handleUpdateSiteSettings}
+          isAuthenticated={isAdminAuthenticated}
+          onLogin={handleAdminLogin}
+          onLogout={handleAdminLogout}
+          onRefreshOrders={handleRefreshOrdersFromSupabase}
+        />
+      );
+    }
+
+    // Unauthenticated access to /admin: Render secure store admin authentication gate
     return (
-      <AdminPortal
-        isOpen={true}
-        onClose={() => setActivePage('store')}
-        products={products}
-        onAddProduct={handleAddProduct}
-        onUpdateProduct={handleUpdateProduct}
-        onDeleteProduct={handleDeleteProduct}
-        heroSlides={heroSlides}
-        onAddHeroSlide={handleAddHeroSlide}
-        onDeleteHeroSlide={handleDeleteHeroSlide}
-        categories={categories}
-        onAddCategory={handleAddCategory}
-        onDeleteCategory={handleDeleteCategory}
-        orders={orders}
-        onUpdateOrderStatus={handleUpdateOrderStatus}
-        onDeleteOrder={handleDeleteOrder}
-        customers={customers}
-        onAddCustomer={handleAddCustomer}
-        onDeleteCustomer={handleDeleteCustomer}
-        siteSettings={siteSettings}
-        onUpdateSiteSettings={handleUpdateSiteSettings}
-        isAuthenticated={isAdminAuthenticated}
-        onLogin={handleAdminLogin}
-        onLogout={handleAdminLogout}
-        onRefreshOrders={handleRefreshOrdersFromSupabase}
-      />
+      <div className="min-h-screen bg-[#181513] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient subtle glow background */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#c97a7e]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#78988b]/10 rounded-full blur-3xl pointer-events-none" />
+
+        <AdminLoginModal
+          isOpen={true}
+          onClose={() => navigateTo('store')}
+          siteSettings={siteSettings}
+          onLogin={handleAdminLogin}
+          onSuccess={() => {
+            setIsAdminAuthenticated(true);
+          }}
+        />
+      </div>
     );
   }
 
@@ -1014,7 +1136,6 @@ export default function App() {
       {/* Footer */}
       <Footer
         onSelectCategory={(catSlug) => handleUpdateFilter({ category: catSlug })}
-        onOpenAdmin={handleOpenAdmin}
         siteSettings={siteSettings}
       />
 
@@ -1052,18 +1173,6 @@ export default function App() {
         siteSettings={siteSettings}
         currentUser={currentUser}
         onOpenTracking={() => setIsTrackingOpen(true)}
-      />
-
-      {/* Admin Login Modal Dialog */}
-      <AdminLoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        siteSettings={siteSettings}
-        onLogin={handleAdminLogin}
-        onSuccess={() => {
-          setIsLoginModalOpen(false);
-          setActivePage('admin');
-        }}
       />
 
       {/* Live Courier Order Tracking Modal with 4-Step Progress Stepper */}

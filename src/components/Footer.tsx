@@ -4,11 +4,11 @@ import { SiteSettings } from '../types';
 
 interface FooterProps {
   onSelectCategory: (categorySlug: string) => void;
-  onOpenAdmin: () => void;
+  onOpenAdmin?: () => void;
   siteSettings: SiteSettings;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onOpenAdmin, siteSettings }) => {
+export const Footer: React.FC<FooterProps> = ({ onSelectCategory, siteSettings }) => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -163,18 +163,6 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onOpenAdmin, s
               </li>
             )}
           </ul>
-
-          {/* Admin Logo Button - replaces old text "Access Store Admin Portal" */}
-          <div className="pt-2">
-            <button
-              onClick={onOpenAdmin}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2a2420] border border-[#3d342e] hover:border-[#c97a7e] text-[#a89d95] hover:text-[#e8beac] transition-all text-xs cursor-pointer group shadow-2xs"
-              title="Store Admin Console"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#c97a7e] group-hover:scale-110 transition-transform" />
-              <span className="font-serif-title text-[11px] font-bold tracking-wider uppercase">Admin Portal</span>
-            </button>
-          </div>
         </div>
       </div>
 

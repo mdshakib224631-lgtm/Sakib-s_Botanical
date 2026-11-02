@@ -9,7 +9,7 @@ interface AdminLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   siteSettings: SiteSettings;
-  onLogin: (email: string, pass: string) => boolean;
+  onLogin: (email: string, pass: string) => boolean | Promise<boolean>;
   onSuccess: () => void;
 }
 
@@ -26,19 +26,27 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   const [loginError, setLoginError] = useState('');
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Eyes should be covered if password input is focused or being typed, UNLESS showPassword (peek mode) is enabled
   const isEyesClosed = (isPasswordFocused || loginPassword.length > 0) && !showPassword;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const success = onLogin(loginEmail.trim(), loginPassword);
-    if (!success) {
-      setLoginError('Invalid Email Address or Password. Please check your credentials and try again.');
-    } else {
-      setLoginPassword('');
-      onSuccess();
+    setIsSubmitting(true);
+    try {
+      const success = await onLogin(loginEmail.trim(), loginPassword);
+      if (!success) {
+        setLoginError('Invalid Email Address or Password. Please check your credentials and try again.');
+      } else {
+        setLoginPassword('');
+        onSuccess();
+      }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -156,9 +164,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
           <button
             type="submit"
-            className="w-full bg-[#2c2724] hover:bg-[#c97a7e] text-white font-semibold py-3.5 rounded-full text-xs uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 mt-2 cursor-pointer"
+            disabled={isSubmitting}
+            className="w-full bg-[#2c2724] hover:bg-[#c97a7e] disabled:opacity-60 text-white font-semibold py-3.5 rounded-full text-xs uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 mt-2 cursor-pointer disabled:cursor-not-allowed"
           >
-            <span>Log In & Go To Admin Web Page</span>
+            <span>{isSubmitting ? 'Authenticating...' : 'Log In & Go To Admin Web Page'}</span>
             <ChevronRight className="w-4 h-4 text-[#e8beac]" />
           </button>
         </form>

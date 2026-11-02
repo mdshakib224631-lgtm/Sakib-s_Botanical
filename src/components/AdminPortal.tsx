@@ -33,7 +33,7 @@ interface AdminPortalProps {
   siteSettings: SiteSettings;
   onUpdateSiteSettings: (settings: SiteSettings) => void;
   isAuthenticated: boolean;
-  onLogin: (email: string, pass: string) => boolean;
+  onLogin: (email: string, pass: string) => boolean | Promise<boolean>;
   onLogout: () => void;
   onRefreshOrders?: () => Promise<any>;
 }
