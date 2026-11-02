@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X, Star, ShoppingCart, Heart, ShieldCheck, Sparkles, Check } from 'lucide-react';
+import { X, Star, ShoppingCart, Heart, ShieldCheck, Sparkles, Check, Zap } from 'lucide-react';
 import { Product, ProductVariant, Review } from '../types';
 
 interface ProductQuickViewProps {
   product: Product | null;
   onClose: () => void;
   onAddToCart: (product: Product, variant?: ProductVariant, quantity?: number) => void;
+  onOrderNow?: (product: Product, variant?: ProductVariant, quantity?: number) => void;
   isWishlisted: boolean;
   onToggleWishlist: (product: Product) => void;
   onAddReview?: (productId: string, review: Omit<Review, 'id' | 'date'>) => void;
@@ -16,6 +17,7 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
   product,
   onClose,
   onAddToCart,
+  onOrderNow,
   isWishlisted,
   onToggleWishlist,
   currencySymbol = '৳',
@@ -44,7 +46,16 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
     setAdded(true);
     setTimeout(() => {
       setAdded(false);
-    }, 1200);
+    }, 1400);
+  };
+
+  const handleOrderNow = () => {
+    if (onOrderNow) {
+      onOrderNow(product, selectedVariant, quantity);
+    } else {
+      onAddToCart(product, selectedVariant, quantity);
+    }
+    onClose();
   };
 
   const currentPrice = product.price * quantity;
@@ -244,29 +255,45 @@ export const ProductQuickView: React.FC<ProductQuickViewProps> = ({
             </button>
           </div>
 
-          {/* Primary CTA: Instantly adds to cart and redirects straight to checkout/payment */}
+          {/* Button 1: Add to Cart - Smooth add with feedback */}
           <button
+            type="button"
             onClick={handleAddToCart}
             disabled={!product.inStock}
-            className={`flex-1 py-3 px-4 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all flex items-center justify-center gap-2 shadow-md active:scale-98 cursor-pointer ${
+            className={`py-3 px-3 sm:px-4 rounded-2xl font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 border active:scale-95 cursor-pointer shrink-0 ${
               added
-                ? 'bg-[#2c7a4b] text-white'
+                ? 'bg-[#eaf5ee] text-[#2c7a4b] border-[#2c7a4b]'
                 : product.inStock
-                ? 'bg-[#1f2d29] hover:bg-[#c97a7e] text-white'
-                : 'bg-[#e8ded5] text-[#8c7e75] cursor-not-allowed'
+                ? 'bg-[#faf8f5] hover:bg-[#f0e8e1] text-[#2c2724] border-[#d8c8bd] hover:border-[#1f2d29]'
+                : 'bg-[#f5f0eb] text-[#a89d95] border-transparent cursor-not-allowed'
             }`}
           >
             {added ? (
               <>
-                <Check className="w-4 h-4 text-white" />
-                <span>Redirecting to Checkout...</span>
+                <Check className="w-4 h-4 text-[#2c7a4b]" />
+                <span>Added</span>
               </>
             ) : (
               <>
-                <ShoppingCart className="w-4 h-4 text-[#e8beac] shrink-0" />
-                <span>Order Now • {currencySymbol}{currentPrice}</span>
+                <ShoppingCart className="w-4 h-4 text-[#8c7e75]" />
+                <span>Add to Cart</span>
               </>
             )}
+          </button>
+
+          {/* Button 2: Order Now - Direct 1-Click Checkout */}
+          <button
+            type="button"
+            onClick={handleOrderNow}
+            disabled={!product.inStock}
+            className={`flex-1 py-3 px-3 sm:px-4 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer ${
+              product.inStock
+                ? 'bg-[#1f2d29] hover:bg-[#2c7a4b] text-white'
+                : 'bg-[#e8ded5] text-[#8c7e75] cursor-not-allowed'
+            }`}
+          >
+            <Zap className="w-4 h-4 text-[#e8beac] fill-current shrink-0" />
+            <span className="truncate">Order Now • {currencySymbol}{currentPrice}</span>
           </button>
 
           {/* Wishlist Button */}

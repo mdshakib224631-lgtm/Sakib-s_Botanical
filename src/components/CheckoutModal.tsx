@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, ShieldCheck, MapPin, Banknote,
   User, Phone, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft,
-  Building2, Compass, Navigation, Lock
+  Building2, Compass, Navigation, Lock, ShoppingBag, Minus, Plus, Tag
 } from 'lucide-react';
 import { CartItem, Order, SiteSettings, CustomerUser } from '../types';
 import { BANGLADESH_GEO_DATA } from '../data/bangladeshGeo';
@@ -17,6 +17,7 @@ interface CheckoutModalProps {
   currentUser?: CustomerUser;
   onOpenProfile?: () => void;
   onOpenTracking?: () => void;
+  onUpdateQuantity?: (productId: string, variantId: string | undefined, delta: number) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -29,12 +30,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   currentUser,
   onOpenProfile,
   onOpenTracking,
+  onUpdateQuantity,
 }) => {
   const currencySymbol = siteSettings?.currencySymbol || '৳';
   const insideDhakaCharge = siteSettings?.insideDhakaDeliveryCharge ?? 60;
   const outsideDhakaCharge = siteSettings?.outsideDhakaDeliveryCharge ?? 120;
 
-  // 2-Step Flow: Step 1 (Delivery Information) & Step 2 (Payment & Order Summary)
+  // 2-Step Flow: Step 1 (Customer & Delivery Information) & Step 2 (Payment & Order Summary)
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,8 +45,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // Form Fields: Customer & Delivery Info
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  
-  // Geographic Location Dropdowns: Division, District, Upazila
+
+  // Geographic Location Cascading Dropdowns: Division -> District -> Upazila
   const [selectedDivision, setSelectedDivision] = useState<string>('Dhaka');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('Dhaka');
   const [selectedUpazila, setSelectedUpazila] = useState<string>('Dhanmondi');
@@ -52,16 +54,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // Detailed Street Address
   const [addressDetails, setAddressDetails] = useState('');
 
-  // Delivery Area is strictly & immutably derived from selectedDivision:
+  // Delivery Area is strictly & dynamically derived from selectedDivision:
   // Division === 'Dhaka' => 'inside_dhaka'
-  // Any other division => 'outside_dhaka'
-  const deliveryArea: 'inside_dhaka' | 'outside_dhaka' =
-    selectedDivision.trim().toLowerCase() === 'dhaka' ? 'inside_dhaka' : 'outside_dhaka';
+  // Any other division (Chittagong, Rajshahi, Sylhet, etc.) => 'outside_dhaka'
+  const isInsideDhaka = selectedDivision.trim().toLowerCase() === 'dhaka';
+  const deliveryArea: 'inside_dhaka' | 'outside_dhaka' = isInsideDhaka ? 'inside_dhaka' : 'outside_dhaka';
+
+  // Dynamic delivery zone label (e.g. Inside Dhaka or Outside Dhaka / Division specific)
+  const deliveryZoneLabel = isInsideDhaka
+    ? (siteSettings?.insideDhakaLabel || 'Inside Dhaka')
+    : (siteSettings?.outsideDhakaLabel || `Outside Dhaka (${selectedDivision})`);
 
   // Promo Coupon
   const [couponCode, setCouponCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
 
   // Available districts for current division
   const availableDistricts = selectedDivision && BANGLADESH_GEO_DATA[selectedDivision]
@@ -73,7 +81,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     ? BANGLADESH_GEO_DATA[selectedDivision].districts[selectedDistrict]
     : [];
 
-  // Handle Division Change: Auto-sets District, Upazila and locks Delivery Area automatically
+  // Handle Division Change: Auto-sets District, Upazila and recalculates Delivery Charge in real-time
   const handleDivisionChange = (division: string) => {
     setSelectedDivision(division);
 
@@ -149,7 +157,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     return parts.join(', ');
   };
 
-  // Move from Step 1 to Step 2
+  // Move from Step 1 to Step 2 with validation
   const handleProceedToStep2 = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setValidationError(null);
@@ -159,27 +167,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     const trimmedAddress = addressDetails.trim();
 
     if (!trimmedName) {
-      setValidationError('Please enter your full name.');
+      setValidationError('Please enter your full name (আপনার পুরো নাম লিখুন)।');
       return;
     }
 
     if (!cleanPhone || cleanPhone.length < 10) {
-      setValidationError('Please enter a valid 11-digit mobile number.');
+      setValidationError('Please enter a valid 11-digit mobile number (১১ ডিজিটের মোবাইল নম্বর লিখুন)।');
       return;
     }
 
     if (!selectedDivision) {
-      setValidationError('Please select your division.');
+      setValidationError('Please select your division (বিভাগ নির্বাচন করুন)।');
       return;
     }
 
     if (!selectedDistrict) {
-      setValidationError('Please select your district.');
+      setValidationError('Please select your district (জেলা নির্বাচন করুন)।');
       return;
     }
 
     if (!trimmedAddress || trimmedAddress.length < 3) {
-      setValidationError('Please enter your street address (House/Road/Area).');
+      setValidationError('Please enter your street address (House/Road/Area) (সম্পূর্ণ ঠিকানা লিখুন)।');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setValidationError('Your cart is empty. Please add an item to proceed.');
       return;
     }
 
@@ -199,6 +212,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (!trimmedName || !cleanPhone || !addressDetails.trim()) {
       setCurrentStep(1);
       setValidationError('Please complete all delivery information fields.');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setValidationError('Your cart is empty.');
       return;
     }
 
@@ -229,7 +247,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         notes: `Division: ${selectedDivision}, District: ${selectedDistrict}, Upazila: ${selectedUpazila}`,
       };
 
-      // 1. Instant state & storage update (< 1ms)
+      // 1. Instant state & Supabase storage update
       onNewOrderCreated(order);
       onClearCart();
       setIsSubmitting(false);
@@ -255,8 +273,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
-      {/* Centered Single Modal Dialog with Elegant Borders - Compact & Zero-Scroll */}
-      <div className="bg-[#faf8f5] w-full max-w-lg sm:max-w-xl rounded-3xl border-2 border-[#d8c8bd] shadow-2xl overflow-hidden relative max-h-[92vh] flex flex-col text-[#1f2d29] my-auto">
+      {/* Centered Modal Dialog with Elegant Borders */}
+      <div className="bg-[#faf8f5] w-full max-w-lg sm:max-w-xl rounded-3xl border border-[#d8c8bd] shadow-2xl overflow-hidden relative max-h-[92vh] flex flex-col text-[#1f2d29] my-auto">
         
         {/* Top Header Bar */}
         <div className="bg-[#1f2d29] text-white px-4 sm:px-6 py-3.5 flex items-center justify-between shrink-0 border-b border-[#2d3e38]">
@@ -268,8 +286,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <h2 className="font-serif-title font-bold text-sm sm:text-base text-white">
                 Checkout & Confirmation
               </h2>
-              <p className="text-[10px] text-[#a3d9b4] flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-[#a3d9b4]" />
+              <p className="text-[10px] sm:text-[11px] text-[#a3d9b4] flex items-center gap-1 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#a3d9b4] shrink-0" />
                 <span>100% Cash on Delivery (Pay upon receiving parcel)</span>
               </p>
             </div>
@@ -284,7 +302,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </button>
         </div>
 
-        {/* 2-Step Option Tabs Bar at the Top of Dialog */}
+        {/* 2-Step Option Tabs Bar */}
         <div className="bg-white px-3 sm:px-5 py-2.5 border-b border-[#e8ded5] flex items-center justify-between gap-2 shrink-0">
           {/* Step 1 Tab Button */}
           <button
@@ -340,7 +358,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           )}
 
-          {/* ================= STEP 1: DELIVERY INFO ================= */}
+          {/* ================= STEP 1: CUSTOMER & LOCATION SELECTION ================= */}
           {currentStep === 1 && (
             <div className="space-y-3 animate-fadeIn">
               
@@ -383,7 +401,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 2: Division beside District beside Upazila / Thana (Dropdown selection) */}
+              {/* Row 2: Cascading Bangladesh Geographic Selectors: Division -> District -> Upazila */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {/* Division Dropdown */}
                 <div>
@@ -443,7 +461,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 3: Detailed Street Address (House / Road / Area) */}
+              {/* Row 3: Detailed Street Address */}
               <div>
                 <label className="block text-xs font-semibold text-[#1f2d29] mb-1">
                   Detailed Address (House / Road / Area / Landmark) <span className="text-[#c97a7e]">*</span>
@@ -461,24 +479,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Immutable Delivery Zone Badge (Auto-Selected based on Dropdown & Non-Editable) */}
-              <div className="bg-white p-2.5 rounded-2xl border border-[#d8c8bd] flex items-center justify-between shadow-2xs">
+              {/* Dynamic Delivery Zone & Charge Auto-Calculated Badge */}
+              <div className="bg-white p-3 rounded-2xl border border-[#d8c8bd] flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-xl bg-[#1f2d29] text-white flex items-center justify-center shrink-0">
                     <Lock className="w-3.5 h-3.5 text-[#e8beac]" />
                   </div>
                   <div>
                     <span className="text-[10px] text-[#8c7e75] block uppercase font-bold tracking-wider">
-                      Delivery Zone (Auto-Locked)
+                      Delivery Zone (Auto-Calculated)
                     </span>
                     <span className="font-bold text-xs text-[#1f2d29]">
-                      {deliveryArea === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}
+                      {deliveryZoneLabel}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-mono font-bold text-[#2c7a4b] bg-[#eaf5ee] px-2.5 py-1 rounded-xl border border-[#2c7a4b]/20 inline-block">
-                    {currencySymbol}{deliveryCharge} Delivery Charge
+                    {currencySymbol}{deliveryCharge} Delivery Fee
                   </span>
                 </div>
               </div>
@@ -486,7 +504,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           )}
 
-          {/* ================= STEP 2: PAYMENT & SUMMARY (COMPACT & REFINED) ================= */}
+          {/* ================= STEP 2: PAYMENT & SUMMARY ================= */}
           {currentStep === 2 && (
             <div className="space-y-3 animate-fadeIn">
               
@@ -512,36 +530,116 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Delivery Zone Row (Immutable display) */}
+              {/* Verified Location & Delivery Zone Card */}
               <div className="bg-white px-3 py-2 rounded-xl border border-[#e8ded5] text-xs flex items-center justify-between shadow-2xs">
                 <span className="text-[#5a5048] flex items-center gap-1.5 font-medium">
                   <MapPin className="w-3.5 h-3.5 text-[#2c7a4b]" />
-                  <span>Delivery Zone: <strong>{deliveryArea === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</strong> ({selectedDivision})</span>
+                  <span>
+                    Location: <strong>{selectedDivision}</strong> ({selectedDistrict}, {selectedUpazila})
+                  </span>
                 </span>
                 <span className="font-mono font-bold text-[#1f2d29]">{currencySymbol}{deliveryCharge}</span>
               </div>
 
+              {/* Ordered Items List with Interactive Quantity Adjusters (+ / -) */}
+              <div className="bg-white rounded-2xl border border-[#e8ded5] p-3 shadow-2xs">
+                <div className="flex items-center justify-between text-xs font-bold text-[#1f2d29] mb-2 border-b border-[#f0e8e1] pb-1.5">
+                  <span className="flex items-center gap-1.5">
+                    <ShoppingBag className="w-3.5 h-3.5 text-[#c97a7e]" />
+                    <span>Order Items ({cartItems.reduce((acc, ci) => acc + ci.quantity, 0)} items)</span>
+                  </span>
+                  <span className="text-[10px] text-[#8c7e75] font-normal">Adjust quantity</span>
+                </div>
+
+                <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                  {cartItems.map((item) => (
+                    <div
+                      key={`${item.product.id}-${item.selectedVariant?.id || 'default'}`}
+                      className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-[#f7f3ef] last:border-b-0"
+                    >
+                      {/* Image & Title */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <img
+                          src={item.selectedVariant?.image || item.product.images[0]}
+                          alt={item.product.name}
+                          className="w-10 h-10 rounded-xl object-cover border border-[#e8ded5] shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-[#1f2d29] truncate text-[11px] sm:text-xs">
+                            {item.product.name}
+                          </p>
+                          <p className="text-[10px] text-[#8c7e75] truncate">
+                            {currencySymbol}{item.product.price} {item.selectedVariant ? `• ${item.selectedVariant.name}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Inline Quantity Adjuster (+ / -) */}
+                      <div className="flex items-center border border-[#d8c8bd] rounded-xl bg-[#faf8f5] px-1.5 py-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onUpdateQuantity && onUpdateQuantity(item.product.id, item.selectedVariant?.id, -1)}
+                          className="w-5 h-5 flex items-center justify-center text-[#4a423d] hover:text-[#1f2d29] active:scale-90 cursor-pointer"
+                          title="Decrease"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-2 text-xs font-bold text-[#1f2d29] font-mono min-w-[18px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateQuantity && onUpdateQuantity(item.product.id, item.selectedVariant?.id, 1)}
+                          className="w-5 h-5 flex items-center justify-center text-[#4a423d] hover:text-[#1f2d29] active:scale-90 cursor-pointer"
+                          title="Increase"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      {/* Total Item Price */}
+                      <span className="font-mono font-bold text-[#1f2d29] text-xs shrink-0 w-16 text-right">
+                        {currencySymbol}{item.product.price * item.quantity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Promo Coupon Box */}
-              <form onSubmit={handleApplyCoupon} className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Promo Code (e.g. SAKIB10)"
-                  className="flex-1 bg-white border border-[#d8c8bd] rounded-xl px-3 py-2 text-xs uppercase font-mono outline-none focus:border-[#1f2d29]"
-                />
-                <button
-                  type="submit"
-                  className="bg-[#1f2d29] hover:bg-[#c97a7e] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
-                >
-                  Apply
-                </button>
-              </form>
-              {couponMessage && (
-                <p className={`text-[10px] ${appliedDiscount > 0 ? 'text-[#2c7a4b] font-semibold' : 'text-red-600'}`}>
-                  {couponMessage}
-                </p>
-              )}
+              <div>
+                {!showCouponInput ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCouponInput(true)}
+                    className="text-[11px] text-[#c97a7e] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Tag className="w-3 h-3" />
+                    <span>Have a Promo Coupon Code?</span>
+                  </button>
+                ) : (
+                  <form onSubmit={handleApplyCoupon} className="flex gap-1.5 animate-fadeIn">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Promo Code (e.g. SAKIB10)"
+                      className="flex-1 bg-white border border-[#d8c8bd] rounded-xl px-3 py-1.5 text-xs uppercase font-mono outline-none focus:border-[#1f2d29]"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-[#1f2d29] hover:bg-[#c97a7e] text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 shadow-2xs"
+                    >
+                      Apply
+                    </button>
+                  </form>
+                )}
+                {couponMessage && (
+                  <p className={`text-[10px] mt-1 ${appliedDiscount > 0 ? 'text-[#2c7a4b] font-semibold' : 'text-red-600'}`}>
+                    {couponMessage}
+                  </p>
+                )}
+              </div>
 
               {/* Cost Breakdown Summary Card */}
               <div className="bg-white p-3.5 rounded-2xl border border-[#e8ded5] space-y-1.5 text-xs shadow-2xs">
@@ -550,7 +648,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <span className="font-mono">{currencySymbol}{subtotal}</span>
                 </div>
                 <div className="flex justify-between text-[#70645c]">
-                  <span>Delivery Charge ({deliveryArea === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'})</span>
+                  <span>Delivery Fee ({deliveryZoneLabel})</span>
                   <span className="font-mono">{currencySymbol}{deliveryCharge}</span>
                 </div>
                 {appliedDiscount > 0 && (
@@ -581,7 +679,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={handleProceedToStep2}
-                className="flex-1 max-w-[240px] bg-[#1f2d29] hover:bg-[#2c7a4b] text-white py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer ml-auto"
+                className="flex-1 max-w-[240px] bg-[#1f2d29] hover:bg-[#2c7a4b] text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer ml-auto"
               >
                 <span>Proceed to Payment</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -599,7 +697,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </button>
               <button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || cartItems.length === 0}
                 onClick={handleConfirmOrder}
                 className="flex-1 bg-[#1f2d29] hover:bg-[#2c7a4b] text-white py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer disabled:opacity-50"
               >

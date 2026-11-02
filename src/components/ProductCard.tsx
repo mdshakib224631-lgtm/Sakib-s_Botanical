@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Star, Eye, ShoppingCart, Heart, Sparkles, Check } from 'lucide-react';
+import { Star, Eye, ShoppingCart, Heart, Sparkles, Check, Zap } from 'lucide-react';
 import { Product, ProductVariant } from '../types';
 
 interface ProductCardProps {
   product: Product;
   onQuickView: (product: Product) => void;
   onAddToCart: (product: Product, variant?: ProductVariant) => void;
+  onOrderNow: (product: Product, variant?: ProductVariant) => void;
   isWishlisted: boolean;
   onToggleWishlist: (product: Product) => void;
   currencySymbol?: string;
@@ -15,6 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onQuickView,
   onAddToCart,
+  onOrderNow,
   isWishlisted,
   onToggleWishlist,
   currencySymbol = '৳',
@@ -27,11 +29,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const activeImage = hoveredImage || (selectedVariant?.image || product.images[0]);
 
+  // Add to Cart: Adds item smoothly to cart state without redirecting
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!product.inStock) return;
     onAddToCart(product, selectedVariant);
     setAddedAnimation(true);
-    setTimeout(() => setAddedAnimation(false), 1200);
+    setTimeout(() => setAddedAnimation(false), 1400);
+  };
+
+  // Order Now: Direct 1-click checkout flow
+  const handleOrder = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!product.inStock) return;
+    onOrderNow(product, selectedVariant);
   };
 
   return (
@@ -157,9 +168,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Footer Price & Full-Width Add Button */}
+        {/* Footer Price & Dual Action Buttons */}
         <div className="mt-2.5 pt-2 border-t border-[#f0e8e1]">
-          <div className="flex items-baseline justify-between gap-1">
+          <div className="flex items-baseline justify-between gap-1 mb-2">
             <div className="flex items-baseline gap-1">
               <span className="font-serif-title font-bold text-sm sm:text-base text-[#2c2724]">
                 {currencySymbol}{product.price}
@@ -175,40 +186,60 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {selectedVariant.name}
               </span>
             ) : product.inStock ? (
-              <span className="text-[9px] sm:text-[10px] text-[#5c8a68] font-medium hidden xs:inline">In Stock</span>
+              <span className="text-[9px] sm:text-[10px] text-[#2c7a4b] font-medium hidden xs:inline">In Stock</span>
             ) : (
               <span className="text-[9px] sm:text-[10px] text-[#a84343] font-medium">Sold Out</span>
             )}
           </div>
 
-          {/* Full-width Responsive Add to Cart Button (Never clips on mobile) */}
-          <button
-            onClick={handleAdd}
-            disabled={!product.inStock}
-            className={`w-full mt-2 py-2 px-2 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer ${
-              addedAnimation
-                ? 'bg-[#5c8a68] text-white'
-                : product.inStock
-                ? 'bg-[#1f2d29] text-[#faf8f5] hover:bg-[#c97a7e]'
-                : 'bg-[#e8ded5] text-[#8c7e75] cursor-not-allowed'
-            }`}
-          >
-            {addedAnimation ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-white shrink-0" />
-                <span className="truncate">Added</span>
-              </>
-            ) : product.inStock ? (
-              <>
-                <ShoppingCart className="w-3.5 h-3.5 text-[#e8beac] shrink-0" />
-                <span className="truncate">Add to Cart</span>
-              </>
-            ) : (
-              <span className="truncate">Sold Out</span>
-            )}
-          </button>
+          {/* Dual Conversion Buttons: Stacked on small cards / mobile, side-by-side on sm+ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {/* Button 1: Add to Cart - Smooth add with animated feedback without redirecting */}
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!product.inStock}
+              className={`w-full py-2 px-2 rounded-xl font-semibold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                addedAnimation
+                  ? 'bg-[#eaf5ee] text-[#2c7a4b] border border-[#2c7a4b] shadow-2xs'
+                  : product.inStock
+                  ? 'bg-[#faf8f5] hover:bg-[#f0e8e1] text-[#2c2724] border border-[#d8c8bd] hover:border-[#1f2d29]'
+                  : 'bg-[#f5f0eb] text-[#a89d95] border border-transparent cursor-not-allowed'
+              }`}
+              title="Add to Cart"
+            >
+              {addedAnimation ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-[#2c7a4b] shrink-0" />
+                  <span className="truncate">Added</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-3.5 h-3.5 text-[#8c7e75] shrink-0" />
+                  <span className="truncate">Add to Cart</span>
+                </>
+              )}
+            </button>
+
+            {/* Button 2: Order Now - Direct 1-Click Instant Checkout */}
+            <button
+              type="button"
+              onClick={handleOrder}
+              disabled={!product.inStock}
+              className={`w-full py-2 px-2 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${
+                product.inStock
+                  ? 'bg-[#1f2d29] hover:bg-[#2c7a4b] text-white'
+                  : 'bg-[#e8ded5] text-[#8c7e75] cursor-not-allowed'
+              }`}
+              title="Order Now"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#e8beac] fill-current shrink-0" />
+              <span className="truncate">Order Now</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+

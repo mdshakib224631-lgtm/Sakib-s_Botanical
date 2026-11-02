@@ -474,6 +474,7 @@ export default function App() {
   }, [wishlistIds]);
 
   // Cart Management Handlers
+  // 1. Smooth Add to Cart: Adds item without redirecting and shows sleek toast confirmation
   const handleAddToCart = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(
@@ -483,6 +484,29 @@ export default function App() {
       if (existingIndex > -1) {
         const updated = [...prev];
         updated[existingIndex].quantity += quantity;
+        return updated;
+      } else {
+        return [...prev, { product, selectedVariant: variant, quantity }];
+      }
+    });
+
+    // Provide immediate subtle feedback toast without any redirect or checkout opening
+    showSuccessToast(
+      'কার্টে যোগ করা হয়েছে!',
+      `"${product.name}" সফলভাবে আপনার শপিং কার্টে যুক্ত হয়েছে।`
+    );
+  };
+
+  // 2. Direct Order Now: Immediate 1-Click checkout flow
+  const handleOrderNow = (product: Product, variant?: ProductVariant, quantity: number = 1) => {
+    setCartItems((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.product.id === product.id && item.selectedVariant?.id === variant?.id
+      );
+
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex].quantity = Math.max(updated[existingIndex].quantity, quantity);
         return updated;
       } else {
         return [...prev, { product, selectedVariant: variant, quantity }];
@@ -1122,6 +1146,7 @@ export default function App() {
                   product={product}
                   onQuickView={(p) => setQuickViewProduct(p)}
                   onAddToCart={handleAddToCart}
+                  onOrderNow={handleOrderNow}
                   isWishlisted={wishlistIds.includes(product.id)}
                   onToggleWishlist={handleToggleWishlist}
                   currencySymbol={siteSettings.currencySymbol}
@@ -1146,6 +1171,7 @@ export default function App() {
         product={quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
         onAddToCart={handleAddToCart}
+        onOrderNow={handleOrderNow}
         isWishlisted={quickViewProduct ? wishlistIds.includes(quickViewProduct.id) : false}
         onToggleWishlist={handleToggleWishlist}
         onAddReview={handleAddReview}
@@ -1173,6 +1199,7 @@ export default function App() {
         siteSettings={siteSettings}
         currentUser={currentUser}
         onOpenTracking={() => setIsTrackingOpen(true)}
+        onUpdateQuantity={handleUpdateCartQuantity}
       />
 
       {/* Live Courier Order Tracking Modal with 4-Step Progress Stepper */}
